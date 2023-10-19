@@ -8,7 +8,8 @@ import {
   compare_password,
   insert_token_jwt,
   insert_login,
-  check_user_login
+  check_user_login,
+  update_login
 } from "../service/user_service"
 import {
   createUser, insertDataLogin
@@ -89,31 +90,30 @@ const login_controller = async (req: Request, res: Response) => {
     if (inputToken.status != 0) throw inputToken
 
     let check_login = await check_user_login({ username: username, last_login: date_without_time });
-    console.log(check_login.data.code)
+    
     let data_login: insertDataLogin;
-    if (check_login.data.code === 0 || check_login.data.code === 1) {
-      data_login = {
-        username: user.message[0].username,
-        fullname: user.message[0].fullname,
-        login_type: 2,
-        login_on: moment().format('YYYY-MM-DD HH:mm:ss'),
-        status_code: '00',
-        description: 'SUKSES',
-        unique_code:unique_code
-      }
-    } else {
-      return response_normal({res:res, code:4035, message:check_login.data.message})
+    switch (check_login.data.code) {
+      case 1:
+        const update_login_type = await update_login({ username: username, last_login: date_without_time });
+        if (update_login_type.status != 0) throw update_login_type
+        let response_login: ResponseDataLogin = {
+          username: update_login_type.data.username,
+          token: inputToken.data[0].token
+        }
+        return response_normal({ res: res, code: 0, message:'SUKSES', data:response_login})
+      case 2:
+        return response_normal({res:res, code:4035, message:check_login.data.message})
+      default:
+        data_login = {
+          username: user.message[0].username,
+          fullname: user.message[0].fullname,
+          login_type: 2,
+          login_on: moment().format('YYYY-MM-DD HH:mm:ss'),
+          status_code: '00',
+          description: 'SUKSES',
+          unique_code:unique_code
+        }
     }
-    // let data_login: insertDataLogin = {
-    //   username: user.message[0].username,
-    //   fullname: user.message[0].fullname,
-    //   login_type: 1,
-    //   login_on: moment().format('YYYY-MM-DD HH:mm:ss'),
-    //   status_code: '00',
-    //   description: 'SUKSES',
-    //   unique_code:unique_code
-    // }
-
     logger.info(`REQ LOGIN => ${JSON.stringify(data_login)}`)
 
     let insert_data_login = await insert_login(data_login);
@@ -124,10 +124,8 @@ const login_controller = async (req: Request, res: Response) => {
       token: inputToken.data[0].token
     }
 
-    // logger.info(`RES LOGIN => ${JSON.stringify(response_login)}`)
-
+    logger.info(`RES LOGIN => ${JSON.stringify(response_login)}`)
     return response_normal({ res: res, code: 0, message:'SUKSES', data:response_login})
-
   } catch (err) {
     var error = (err as TypedReturnedService)
     logger.error(`Error => ${JSON.stringify(error)}`)
@@ -136,12 +134,19 @@ const login_controller = async (req: Request, res: Response) => {
 }
 
 const logout_controller = async(req:Request, res:Response) => {
+  let { username } = req.body
+  var date_without_time = moment().format('YYYY-MM-DD');
+  
   try {
-    // let { username } = req.body
-    let cek = {
-      dek:'dek'
+    let check_login = await check_user_login({ username: username, last_login: date_without_time });
+
+    if (check_login.data.code == 2) {
+      const logout_user = await update_login({ username: username, last_login: date_without_time });
+      if (logout_user.status != 0) throw logout_user
+      return response_normal({ res: res, code: 0, message:'SUKSES', data:logout_user.data})
     }
-    return response_normal({ res: res, code: 0, message:'SUKSES', data:cek})
+
+    return response_normal({ res: res, code: 0, message:'GAGAL LOGOUT'})
   } catch (err) {
     var error = (err as TypedReturnedService)
     logger.error(`Error => ${JSON.stringify(error)}`)
