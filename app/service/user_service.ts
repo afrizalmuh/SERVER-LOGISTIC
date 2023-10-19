@@ -91,3 +91,22 @@ export const insert_login = async (param: insertDataLogin): Promise<TypedReturne
     return { status: 4638, data: (err as Error).message} as TypedReturnedService
   }
 }
+
+export const update_login = async (param: checkUserLogin): Promise<TypedReturnedService> => {
+  try {
+    let { username, last_login } = param
+    let result = await db.raw(`
+      UPDATE trx.t_trx_login as tb
+      SET login_type = 
+        CASE
+          WHEN login_type = 1 THEN 2
+          ELSE 1
+        END
+      WHERE tb.login_on::date = '${last_login}' and tb.username = '${username}'
+      RETURNING *
+    `)
+    return {status:0, message:'Success', data:result.rows[0]}
+  } catch (err) {
+    return {status: 4817, data:(err as Error).message} as TypedReturnedService 
+  }
+}
