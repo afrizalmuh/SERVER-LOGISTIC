@@ -20,11 +20,14 @@ import { ResponseCreateUser, ResponseDataLogin } from '../models/user_controller
 import { TOKEN_SECRET } from '../config/secret'
 import { generate } from 'randomstring'
 import logger from '../config/logger'
+import { client_redis } from '../redis'
 
 const create_user_controller = async (req: Request, res: Response) => {
   let { fullname, username, email, password } = req.body;
 
   try {
+    // client_redis.get('message-response-logistic');
+
     let user = await search_user({ username: username });
     if (user.status != 0) throw user
     if (user.message.length != 0) throw { status: 1, message: 'Username already exist' }
