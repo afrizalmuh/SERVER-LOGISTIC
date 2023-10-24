@@ -23,10 +23,9 @@ import logger from '../config/logger'
 import { client_redis } from '../redis'
 
 const create_user_controller = async (req: Request, res: Response) => {
-  let { fullname, username, email, password } = req.body;
+  let { fullname, username, email, password, user_group } = req.body;
 
   try {
-    // client_redis.get('message-response-logistic');
 
     let user = await search_user({ username: username });
     if (user.status != 0) throw user
@@ -40,7 +39,8 @@ const create_user_controller = async (req: Request, res: Response) => {
       username: username,
       password: encyrpt_psw.message,
       email: email,
-      created_on_dtm: moment().format('YYYY-MM-DD HH:mm:ss')
+      user_group_id: user_group,
+      created_on: moment().format('YYYY-MM-DD HH:mm:ss')
     }
 
     logger.info(`REQ CREATE => ${JSON.stringify(data_create_user)}`) 
@@ -146,7 +146,7 @@ const logout_controller = async(req:Request, res:Response) => {
     if (check_login.data.code == 2) {
       const logout_user = await update_login({ username: username, last_login: date_without_time });
       if (logout_user.status != 0) throw logout_user
-      return response_normal({ res: res, code: 0, message:'SUKSES', data:logout_user.data})
+      return response_normal({ res: res, code: 0, message:'SUKSES LOGOUT'})
     }
 
     return response_normal({ res: res, code: 0, message:'GAGAL LOGOUT'})

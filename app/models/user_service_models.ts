@@ -3,7 +3,8 @@ export interface createUser {
   username: string,
   email: string,
   password?: any,
-  created_on_dtm: string
+  user_group_id: number,
+  created_on: string
 }
 
 export interface insertDataLogin {
